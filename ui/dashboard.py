@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFrame, QGridLayout, QStackedWidget, QListWidget, QListWidgetItem, QMessageBox
 )
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtCore import Qt
 
 from core import system_utils
@@ -22,7 +23,17 @@ class DashboardWindow(QMainWindow):
         super().__init__()
         self.on_close_callback = on_close_callback
         self.setWindowTitle(f"{APP_NAME} — {BRAND_OWNER}")
-        self.resize(1250, 780)
+
+        # Dynamically fit window to available screen space
+        screen = QGuiApplication.primaryScreen().availableGeometry()
+        default_width = min(1250, screen.width() - 40)
+        default_height = min(780, screen.height() - 40)
+        self.resize(default_width, default_height)
+        self.setMinimumSize(900, 600)
+        self.move(
+            screen.x() + (screen.width() - default_width) // 2,
+            screen.y() + (screen.height() - default_height) // 2
+        )
 
         central = QWidget()
         self.setCentralWidget(central)
@@ -57,7 +68,6 @@ class DashboardWindow(QMainWindow):
 
         sidebar_layout.addStretch()
 
-        # ---------- Branding Footer ----------
         tagline_label = QLabel(APP_TAGLINE)
         tagline_label.setObjectName("Muted")
         tagline_label.setWordWrap(True)
@@ -80,41 +90,34 @@ class DashboardWindow(QMainWindow):
 
         main_layout.addWidget(sidebar)
 
-        # ---------- Pages ----------
+        # ---------- Pages (LAZY LOADED) ----------
         self.stack = QStackedWidget()
         main_layout.addWidget(self.stack)
 
+        # Factories — pages are NOT created here, only registered.
+        # They get instantiated the first time the user navigates to them.
+        # This fixes the startup freeze caused by every page's __init__
+        # running blocking scans (Junk/Apps/Security) before the window
+        # even appears on screen.
+        self.page_factories = {
+            "Disk Manager": DiskManagerPage,
+            "Junk Analyzer": JunkAnalyzerPage,
+            "Recommendations": RecommendationPage,
+            "Apps Intelligence": AppsIntelligencePage,
+            "Security Center": SecurityCenterPage,
+            "Image Manager": ImageManagerPage,
+            "Activity Timeline": ActivityTimelinePage,
+            "Reports": ReportsPage,
+            "Wallpaper (Optional)": WallpaperPage,
+        }
+        self.page_instances = {}
         self.page_index = {}
 
+        # Only the Dashboard home page is built immediately (it's lightweight —
+        # just disk usage % and a health score, no heavy scans).
         self.home_page = self.build_home_page()
+        self.page_instances["Dashboard"] = self.home_page
         self.page_index["Dashboard"] = self.stack.addWidget(self.home_page)
-
-        self.disk_page = DiskManagerPage()
-        self.page_index["Disk Manager"] = self.stack.addWidget(self.disk_page)
-
-        self.junk_page = JunkAnalyzerPage()
-        self.page_index["Junk Analyzer"] = self.stack.addWidget(self.junk_page)
-
-        self.recommendation_page = RecommendationPage()
-        self.page_index["Recommendations"] = self.stack.addWidget(self.recommendation_page)
-
-        self.apps_page = AppsIntelligencePage()
-        self.page_index["Apps Intelligence"] = self.stack.addWidget(self.apps_page)
-
-        self.security_page = SecurityCenterPage()
-        self.page_index["Security Center"] = self.stack.addWidget(self.security_page)
-
-        self.image_page = ImageManagerPage()
-        self.page_index["Image Manager"] = self.stack.addWidget(self.image_page)
-
-        self.timeline_page = ActivityTimelinePage()
-        self.page_index["Activity Timeline"] = self.stack.addWidget(self.timeline_page)
-
-        self.reports_page = ReportsPage()
-        self.page_index["Reports"] = self.stack.addWidget(self.reports_page)
-
-        self.wallpaper_page = WallpaperPage()
-        self.page_index["Wallpaper (Optional)"] = self.stack.addWidget(self.wallpaper_page)
 
         self.nav_buttons["Dashboard"].setChecked(True)
 
@@ -231,20 +234,32 @@ class DashboardWindow(QMainWindow):
         for key, btn in self.nav_buttons.items():
             btn.setChecked(key == name)
 
+        # Lazy-create the page on first visit only
+        if name not in self.page_instances:
+            page_class = self.page_factories[name]
+            page = page_class()
+            self.page_instances[name] = page
+            self.page_index[name] = self.stack.addWidget(page)
+
         self.stack.setCurrentIndex(self.page_index[name])
 
         if name == "Dashboard":
             self.refresh_home()
         elif name == "Disk Manager":
-            self.disk_page.refresh_disks()
+            self.page_instances["Disk Manager"].refresh_disks()
 
     def closeEvent(self, event):
         """Active Mode -> Idle Mode: memory unload"""
         event.ignore()
-        if hasattr(self, "timeline_page") and self.timeline_page.tracker_thread:
-            self.timeline_page.tracker_thread.stop()
-        if hasattr(self, "wallpaper_page"):
-            self.wallpaper_page._teardown_canvas()
+
+        timeline_page = self.page_instances.get("Activity Timeline")
+        if timeline_page and getattr(timeline_page, "tracker_thread", None):
+            timeline_page.tracker_thread.stop()
+
+        wallpaper_page = self.page_instances.get("Wallpaper (Optional)")
+        if wallpaper_page:
+            wallpaper_page._teardown_canvas()
+
         self.hide()
         if self.on_close_callback:
             self.on_close_callback()
