@@ -1,0 +1,52 @@
+{
+  "pdf_reader": {
+    "keywords": ["adobe acrobat", "sumatra", "foxit", "pdf-xchange", "okular"],
+    "suggestions": ["SumatraPDF (lightweight, fast)", "Foxit Reader"],
+    "message": "No dedicated PDF reader detected."
+  },
+  "archive_tool": {
+    "keywords": ["7-zip", "winrar", "peazip", "bandizip"],
+    "suggestions": ["7-Zip (free, open-source)", "PeaZip"],
+    "message": "No archive/compression tool detected (zip/rar/7z handling)."
+  },
+  "media_player": {
+    "keywords": ["vlc", "mpc-hc", "potplayer", "kmplayer"],
+    "suggestions": ["VLC Media Player", "MPC-HC"],
+    "message": "No advanced media player detected (default Windows player has limited codec support)."
+  },
+  "antivirus_extra": {
+    "keywords": ["malwarebytes", "avast", "kaspersky", "bitdefender", "eset"],
+    "suggestions": ["Malwarebytes (on-demand scanner, works alongside Defender)"],
+    "message": "Only built-in Defender detected — an on-demand second-opinion scanner can help."
+  },
+  "disk_cleanup_tool": {
+    "keywords": ["ccleaner", "bleachbit"],
+    "suggestions": ["BleachBit (free, open-source)"],
+    "message": "No dedicated junk-cleaning tool detected (Prime Vitals' own Junk Analyzer can also handle this)."
+  },
+  "image_viewer": {
+    "keywords": ["irfanview", "honeyview", "xnview"],
+    "suggestions": ["IrfanView (extremely lightweight)"],
+    "message": "No fast third-party image viewer detected."
+  },
+  "text_editor": {
+    "keywords": ["notepad++", "sublime text", "vscode", "visual studio code"],
+    "suggestions": ["Notepad++ (lightweight, powerful)"],
+    "message": "No advanced text editor detected (Notepad has very limited features)."
+  },
+  "screen_recorder": {
+    "keywords": ["obs studio", "obs", "camtasia", "sharex"],
+    "suggestions": ["ShareX (free, screenshots + recording)", "OBS Studio"],
+    "message": "No screen recording/screenshot tool detected."
+  },
+  "system_info_tool": {
+    "keywords": ["cpu-z", "hwinfo", "speccy"],
+    "suggestions": ["HWiNFO (free, detailed hardware info)"],
+    "message": "No detailed hardware diagnostic tool detected."
+  },
+  "backup_tool": {
+    "keywords": ["macrium reflect", "acronis", "veeam"],
+    "suggestions": ["Macrium Reflect Free (disk imaging/backup)"],
+    "message": "No backup/disk-imaging tool detected — important for disaster recovery."
+  }
+}
